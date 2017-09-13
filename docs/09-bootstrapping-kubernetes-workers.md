@@ -4,10 +4,12 @@ In this lab you will bootstrap three Kubernetes worker nodes. The following comp
 
 ## Prerequisites
 
-The commands in this lab must be run on each worker instance: `worker-0`, `worker-1`, and `worker-2`. Login to each worker instance using the `gcloud` command. Example:
+The commands in this lab must be run on each worker instance: `worker-0`, `worker-1`, and `worker-2`. 
+Login to each worker instance using your favorite SSH client.
+To get a reminder of the hosts IPs:
 
 ```
-gcloud compute ssh worker-0
+az vm list -g $GROUP -d -o table
 ```
 
 ## Provisioning a Kubernetes Worker Node
@@ -85,11 +87,21 @@ sudo mv conmon pause /usr/local/libexec/crio/
 
 ### Configure CNI Networking
 
-Retrieve the Pod CIDR range for the current compute instance:
+Set the right CIDR rande for each worker : 
 
+Worker 0
 ```
-POD_CIDR=$(curl -s -H "Metadata-Flavor: Google" \
-  http://metadata.google.internal/computeMetadata/v1/instance/attributes/pod-cidr)
+POD_CIDR=10.200.0.0/24
+```
+
+Worker 1
+```
+POD_CIDR=10.200.1.0/24
+```
+
+Worker 2
+```
+POD_CIDR=10.200.2.0/24
 ```
 
 Create the `bridge` network configuration file:
@@ -258,13 +270,7 @@ sudo systemctl start crio kubelet kube-proxy
 
 ## Verification
 
-Login to one of the controller nodes:
-
-```
-gcloud compute ssh controller-0
-```
-
-List the registered Kubernetes nodes:
+Login to one of the controller nodes & list the registered Kubernetes nodes:
 
 ```
 kubectl get nodes

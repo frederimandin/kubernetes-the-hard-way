@@ -4,10 +4,11 @@ Kubernetes components are stateless and store cluster state in [etcd](https://gi
 
 ## Prerequisites
 
-The commands in this lab must be run on each controller instance: `controller-0`, `controller-1`, and `controller-2`. Login to each controller instance using the `gcloud` command. Example:
+The commands in this lab must be run on each controller instance: `controller-0`, `controller-1`, and `controller-2`. Login to each controller instance using your favorite SSH client.
+To get a reminder of the hosts IPs:
 
 ```
-gcloud compute ssh controller-0
+az vm list -g $GROUP -d -o table
 ```
 
 ## Bootstrapping an etcd Cluster Member
@@ -44,8 +45,7 @@ sudo cp ca.pem kubernetes-key.pem kubernetes.pem /etc/etcd/
 The instance internal IP address will be used to serve client requests and communicate with etcd cluster peers. Retrieve the internal IP address for the current compute instance:
 
 ```
-INTERNAL_IP=$(curl -s -H "Metadata-Flavor: Google" \
-  http://metadata.google.internal/computeMetadata/v1/instance/network-interfaces/0/ip)
+INTERNAL_IP=$(hostname -I | cut -d' ' -f1)
 ```
 
 Each etcd member must have a unique name within an etcd cluster. Set the etcd name to match the hostname of the current compute instance:

@@ -36,7 +36,8 @@ Copy the `encryption-config.yaml` encryption config file to each controller inst
 
 ```
 for instance in controller-0 controller-1 controller-2; do
-  gcloud compute scp encryption-config.yaml ${instance}:~/
+  	HOSTIP=$(az vm list-ip-addresses -g $GROUP -n ${instance} --query '[].virtualMachine.network.publicIpAddresses[0].ipAddress' -o tsv)
+    scp encryption-config.yaml ${HOSTIP}:~/
 done
 ```
 

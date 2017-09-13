@@ -136,11 +136,11 @@ cat > ${instance}-csr.json <<EOF
 }
 EOF
 
-EXTERNAL_IP=$(gcloud compute instances describe ${instance} \
-  --format 'value(networkInterfaces[0].accessConfigs[0].natIP)')
+EXTERNAL_IP=$(az vm list-ip-addresses -g $GROUP -n ${instance} --query \
+  '[].virtualMachine.network.publicIpAddresses[0].ipAddress' -o tsv)
 
-INTERNAL_IP=$(gcloud compute instances describe ${instance} \
-  --format 'value(networkInterfaces[0].networkIP)')
+INTERNAL_IP=$(az vm list-ip-addresses -g $GROUP -n ${instance} --query \
+ '[].virtualMachine.network.privateIpAddresses[0]' -o tsv)
 
 cfssl gencert \
   -ca=ca.pem \
@@ -213,9 +213,9 @@ The `kubernetes-the-hard-way` static IP address will be included in the list of 
 Retrieve the `kubernetes-the-hard-way` static IP address:
 
 ```
-KUBERNETES_PUBLIC_ADDRESS=$(gcloud compute addresses describe kubernetes-the-hard-way \
-  --region $(gcloud config get-value compute/region) \
-  --format 'value(address)')
+KUBERNETES_PUBLIC_ADDRESS=$(az network public-ip \
+  show -g $GROUP -n $PUBLIC_IP_NAME --query \
+  "{ address: ipAddress }" -o tsv)
 ```
 
 Create the Kubernetes API Server certificate signing request:
@@ -266,15 +266,17 @@ Copy the appropriate certificates and private keys to each worker instance:
 
 ```
 for instance in worker-0 worker-1 worker-2; do
-  gcloud compute scp ca.pem ${instance}-key.pem ${instance}.pem ${instance}:~/
+  HOSTIP=$(az vm list-ip-addresses -g $GROUP -n ${instance} --query '[].virtualMachine.network.publicIpAddresses[0].ipAddress' -o tsv)
+  scp ca.pem ${instance}-key.pem ${instance}.pem ${HOSTIP}:~/
 done
 ```
 
 Copy the appropriate certificates and private keys to each controller instance:
 
 ```
-for instance in controller-0 controller-1 controller-2; do
-  gcloud compute scp ca.pem ca-key.pem kubernetes-key.pem kubernetes.pem ${instance}:~/
+for host in controller-0 controller-1 controller-2; do
+	HOSTIP=$(az vm list-ip-addresses -g $GROUP -n ${host} --query '[].virtualMachine.network.publicIpAddresses[0].ipAddress' -o tsv)
+  scp ca.pem ca-key.pem kubernetes-key.pem kubernetes.pem ${HOSTIP}:~/
 done
 ```
 

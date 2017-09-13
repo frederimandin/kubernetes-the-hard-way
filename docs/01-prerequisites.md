@@ -1,41 +1,71 @@
 # Prerequisites
 
-## Google Cloud Platform
+## Microsoft Azure
 
-This tutorial leverages the [Google Cloud Platform](https://cloud.google.com/) to streamline provisioning of the compute infrastructure required to bootstrap a Kubernetes cluster from the ground up. [Sign up](https://cloud.google.com/free/) for $300 in free credits.
+This tutorial leverages [Microsoft Azure](https://portal.azure.com/) to streamline provisioning of the compute infrastructure required to bootstrap a Kubernetes cluster from the ground up. [Sign up](https://azure.microsoft.com/fr-fr/free/) for $200 in free credits.
 
-[Estimated cost](https://cloud.google.com/products/calculator/#id=78df6ced-9c50-48f8-a670-bc5003f2ddaa) to run this tutorial: $0.22 per hour ($5.39 per day).
+## Azure CLI
 
-> The compute resources required for this tutorial exceed the Google Cloud Platform free tier.
+### Install Azure CLI
 
-## Google Cloud Platform SDK
-
-### Install the Google Cloud SDK
-
-Follow the Google Cloud SDK [documentation](https://cloud.google.com/sdk/) to install and configure the `gcloud` command line utility.
-
-Verify the Google Cloud SDK version is 169.0.0 or higher:
+Follow the Azure CLI [documentation](https://docs.microsoft.com/en-us/cli/azure/get-started-with-azure-cli?view=azure-cli-latest) to install and configure the `az` command line utility.
+Azure CLI is working:
 
 ```
-gcloud version
+az
+```
+Output 
+
 ```
 
-### Set a Default Compute Region and Zone
+     /\
+    /  \    _____   _ _ __ ___
+   / /\ \  |_  / | | | \'__/ _ \
+  / ____ \  / /| |_| | | |  __/
+ /_/    \_\/___|\__,_|_|  \___|
 
-This tutorial assumes a default compute region and zone have been configured.
 
-Set a default compute region:
+Welcome to the cool new Azure CLI!
+
+Here are the base commands:
+
+    account          : Manage subscriptions.
+    acr              : Manage Azure container registries.
+    acs              : Manage Azure Container Services.
+    ad               : Synchronize on-premises directories and manage Azure Active Directory
+                       resources.
+...
+```
+
+### Set the overall variables you will need
+
+This tutorial will need several names already setup, for all resources :
 
 ```
-gcloud config set compute/region us-west1
+AZURE_SUBSCRIPTION=Id_of_the_correct_Azure_subscription
+SSH_PASSWORD=Password_for_SSH_connection_to_the_hosts
+SSH_USERNAME=Username_to_use_for_SSH_connection
+GROUP=Name_of_the_resource_group
+VNET_NAME=Name_of_the_Vnet
+NSG_NAME=Name_of_the_NSG
+SUBNET_NAME=Name_fo_the_Subnet
+PUBLIC_IP_NAME=Name_of_the_Public_IP
+LOAD_BALANCER=Name_of_the_lb
+POOL_NAME=Name_of_the_LB_pool
+RULE_NAME=Name_fo_the_load_balancer_rule
+PROBE_NAME=Name_of_the_probe
+ASET_NAME=Name_of_the_availability_set
+ROUTE_NAME=Name_of_the_route_table
 ```
 
-Set a default compute zone:
-
+Then we will need to set the correct subscription to be used :
 ```
-gcloud config set compute/zone us-west1-c
+az account set -s $AZURE_SUBSCRIPTION
 ```
 
-> Use the `gcloud compute zones list` command to view additional regions and zones.
+And create the resource group that will regroup all the necessary resources
+```
+az group create -l westeurope -n $GROUP
+```
 
 Next: [Installing the Client Tools](02-client-tools.md)

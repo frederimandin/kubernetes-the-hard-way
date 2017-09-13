@@ -4,11 +4,13 @@ In this lab you will bootstrap the Kubernetes control plane across three compute
 
 ## Prerequisites
 
-The commands in this lab must be run on each controller instance: `controller-0`, `controller-1`, and `controller-2`. Login to each controller instance using the `gcloud` command. Example:
+The commands in this lab must be run on each controller instance: `controller-0`, `controller-1`, and `controller-2`. Login to each controller instance using your favorite SSH client.
+To get a reminder of the hosts IPs:
 
 ```
-gcloud compute ssh controller-0
+az vm list -g $GROUP -d -o table
 ```
+
 
 ## Provision the Kubernetes Control Plane
 
@@ -47,8 +49,7 @@ sudo mv ca.pem ca-key.pem kubernetes-key.pem kubernetes.pem encryption-config.ya
 The instance internal IP address will be used advertise the API Server to members of the cluster. Retrieve the internal IP address for the current compute instance:
 
 ```
-INTERNAL_IP=$(curl -s -H "Metadata-Flavor: Google" \
-  http://metadata.google.internal/computeMetadata/v1/instance/network-interfaces/0/ip)
+INTERNAL_IP=$(hostname -I | cut -d' ' -f1)
 ```
 
 Create the `kube-apiserver.service` systemd unit file:
@@ -191,53 +192,13 @@ etcd-1               Healthy   {"health": "true"}
 
 > Remember to run the above commands on each controller node: `controller-0`, `controller-1`, and `controller-2`.
 
-## The Kubernetes Frontend Load Balancer
-
-In this section you will provision an external load balancer to front the Kubernetes API Servers. The `kubernetes-the-hard-way` static IP address will be attached to the resulting load balancer.
-
-> The compute instances created in this tutorial will not have permission to complete this section. Run the following commands from the same machine used to create the compute instances.
-
-Create the external load balancer network resources:
-
-```
-gcloud compute http-health-checks create kube-apiserver-health-check \
-  --description "Kubernetes API Server Health Check" \
-  --port 8080 \
-  --request-path /healthz
-```
-
-```
-gcloud compute target-pools create kubernetes-target-pool \
-  --http-health-check=kube-apiserver-health-check
-```
-
-```
-gcloud compute target-pools add-instances kubernetes-target-pool \
-  --instances controller-0,controller-1,controller-2
-```
-
-```
-KUBERNETES_PUBLIC_ADDRESS=$(gcloud compute addresses describe kubernetes-the-hard-way \
-  --region $(gcloud config get-value compute/region) \
-  --format 'value(name)')
-```
-
-```
-gcloud compute forwarding-rules create kubernetes-forwarding-rule \
-  --address ${KUBERNETES_PUBLIC_ADDRESS} \
-  --ports 6443 \
-  --region $(gcloud config get-value compute/region) \
-  --target-pool kubernetes-target-pool
-```
 
 ### Verification
 
 Retrieve the `kubernetes-the-hard-way` static IP address:
 
 ```
-KUBERNETES_PUBLIC_IP_ADDRESS=$(gcloud compute addresses describe kubernetes-the-hard-way \
-  --region $(gcloud config get-value compute/region) \
-  --format 'value(address)')
+KUBERNETES_PUBLIC_IP_ADDRESS=$(az network public-ip show -g $GROUP -n $PUBLIC_IP_NAME --query "{ address: ipAddress }" -o tsv)
 ```
 
 Make a HTTP request for the Kubernetes version info:

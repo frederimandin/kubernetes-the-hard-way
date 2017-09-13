@@ -8,53 +8,39 @@ In this lab you will create a route for each worker node that maps the node's Po
 
 ## The Routing Table
 
-In this section you will gather the information required to create routes in the `kubernetes-the-hard-way` VPC network.
+In this section you will gather the information required to create routes in the VNet.
 
-Print the internal IP address and Pod CIDR range for each worker instance:
+Print the internal IP address and Pod CIDR range for each worker instance, on each worker:
 
 ```
-for instance in worker-0 worker-1 worker-2; do
-  gcloud compute instances describe ${instance} \
-    --format 'value[separator=" "](networkInterfaces[0].networkIP,metadata.items[0].value)'
-done
+(hostname -I | cut -d' ' -f1 ) && echo $POD_CIDR
 ```
 
 > output
 
 ```
-10.240.0.20 10.200.0.0/24
-10.240.0.21 10.200.1.0/24
-10.240.0.22 10.200.2.0/24
+10.240.0.20
+10.200.0.0/24
 ```
-
+```
+10.240.0.21
+10.200.1.0/24
+```
+```
+10.240.0.22
+10.200.2.0/24
+```
 ## Routes
 
 Create network routes for each worker instance:
 
 ```
-for i in 0 1 2; do
-  gcloud compute routes create kubernetes-route-10-200-${i}-0-24 \
-    --network kubernetes-the-hard-way \
-    --next-hop-address 10.240.0.2${i} \
-    --destination-range 10.200.${i}.0/24
-done
+az network route-table create -n $ROUTE_NAME -g $GROUP -l westeurope
+az network route-table route create -n route0 -g $GROUP --route-table-name $ROUTE_NAME --address-prefix 10.200.0.0/24 --next-hop-type VirtualAppliance --next-hop-ip-address 10.240.0.20
+az network route-table route create -n route1 -g $GROUP --route-table-name $ROUTE_NAME --address-prefix 10.200.1.0/24 --next-hop-type VirtualAppliance --next-hop-ip-address 10.240.0.21
+az network route-table route create -n route2 -g $GROUP --route-table-name $ROUTE_NAME --address-prefix 10.200.2.0/24 --next-hop-type VirtualAppliance --next-hop-ip-address 10.240.0.22
+az network vnet subnet update -n $SUBNET_NAME -g $GROUP --vnet-name $VNET_NAME --route-table $ROUTE_NAME
 ```
 
-List the routes in the `kubernetes-the-hard-way` VPC network:
-
-```
-gcloud compute routes list --filter "network kubernetes-the-hard-way"
-```
-
-> output
-
-```
-NAME                            NETWORK                  DEST_RANGE     NEXT_HOP                  PRIORITY
-default-route-77bcc6bee33b5535  kubernetes-the-hard-way  10.240.0.0/24                            1000
-default-route-b11fc914b626974d  kubernetes-the-hard-way  0.0.0.0/0      default-internet-gateway  1000
-kubernetes-route-10-200-0-0-24  kubernetes-the-hard-way  10.200.0.0/24  10.240.0.20               1000
-kubernetes-route-10-200-1-0-24  kubernetes-the-hard-way  10.200.1.0/24  10.240.0.21               1000
-kubernetes-route-10-200-2-0-24  kubernetes-the-hard-way  10.200.2.0/24  10.240.0.22               1000
-```
 
 Next: [Deploying the DNS Cluster Add-on](12-dns-addon.md)
